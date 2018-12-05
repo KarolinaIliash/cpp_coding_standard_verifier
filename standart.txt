@@ -1,0 +1,280 @@
+﻿Class Names // write warning, try to fix if possible
+• Use upper case letters as word separators, lower case for the rest of a word
+• First character in a name is upper case
+• No underbars ('_') 
+
+
+// write warning, try to fix what possible (without auto)
+Method Names
+• Use the same rule as for class names. 
+
+// write warning, try to fix what possible (without auto)
+Class Attribute Names
+• Attribute names should be prepended with the character 'm'.
+• After the 'm' use the same rules as for class names.
+• 'm' always precedes other name modifiers like 'p' for pointer. 
+
+// write warning, try to fix what possible
+Method Argument Names
+• The first character should be lower case.
+• All word beginnings after the first letter should be upper case as with class names. 
+
+// write warning, try to fix what possible 
+Variable Names on the Stack
+• use all lower case letters
+• use '_' as the word separator. 
+
+// write warning, try to fix what possible (without auto)
+Pointer Variables
+• pointers should be prepended by a 'p' in most cases
+• place the * close to the pointer type not the variable name 
+
+// write warning, try to fix what possible (without auto)
+Reference Variables and Functions Returning References
+• References should be prepended with 'r'. 
+
+// write warning, try to fix what possible (without auto)
+Global Variables
+• Global variables should be prepended with a 'g'. 
+
+// write warning, try to fix what possible (without auto)
+Global Constants
+• Global constants should be all caps with '_' separators. 
+
+// write warning, try to fix what possible (without auto)
+Static Variables
+• Static variables may be prepended with 's'. 
+
+// write warning, try to fix what possible (without auto)
+Type Names
+• Typedef names should use the same naming policy as for a class with the word Type appended. 
+
+// write warning, try to fix what possible (without auto)
+Enum Names
+Labels All Upper Case with '_' Word Separators
+This is the standard rule for enum labels. 
+
+// write warning, try to fix what possible (without auto)
+#define and Macro Names
+• Put #defines and macros in all upper using '_' separators. 
+
+// write warning, try to fix what possible (without auto)
+C Function Names
+• For C functions use the GNU convention of all lower case letters with '_' as the word delimiter. 
+
+
+// write warning
+Don't put more than one class in a file
+
+// write warning, fix if only class in file
+Name your files after your classes. 
+
+// write warning, maybe add it
+Every directory should have a README file that covers: 
+Include statements should be documented, telling the user why a particular file was included. If the file
+includes a class used by the class then it's useful to specify a class relationship: 
+
+
+ // write warning
+ Class Definition in One File
+Each class definition should be in its own file where each file is named directly after the class's name:
+ ClassName.h
+ 
+ //write warning
+ Implementation in One File
+In general each class should be implemented in one source file:
+ ClassName.cc // or whatever the extension is: cpp, c++
+But When it Gets Really Big...
+If the source file gets too large or you want to avoid compiling templates all the time then add
+additional files named according to the following rule:
+ ClassName_section.C
+section is some name that identifies why the code is chunked together. The class name and section
+name are separated by '_'. 
+
+
+
+// warning, try to fix
+Ordering is: public, protected, private 
+
+
+
+
+// warning, add them (maybe)
+Use Header File Guards
+Include files should protect against multiple inclusion through the use of macros that "guard" the files.
+When Not Using Namespces
+#ifndef filename_h
+#define filename_h
+#endif
+The new line after the endif if is required by some compilers. 
+
+When Using Namespaces
+If namespaces are used then to be completely safe:
+#ifndef namespace_filename_h
+#define namespace_filename_h
+#endif 
+1. Replace filename with the name of the file being guarded. This should usually be the name of
+class contained in the file. Use the exact class name. Some standards say use all upper case.
+This is a mistake because someone could actually name a class the same as yours but using all
+upper letters. If the files end up be included together one file will prevent the other from being
+included and you will be one very confused puppy. It has happened!
+2. Most standards put a leading _ and trailing _. This is no longer valid as the C++ standard
+reserves leading _ to compiler writers.
+3. When the include file is not for a class then the file name should be used as the guard name.
+4. Compilers differ on how comments are handled on preprocessor directives. Historically many
+compilers have not accepted comments on preprocessor directives.
+5. Historically many compilers require a new line after last endif. 
+
+// warning, add template of documentaion above method
+Method Header
+Every parameter should be documented. Every return code should be documented. All exceptions
+should be documented. Use complete sentences when describing attributes. Make sure to think about
+what other resources developers may need and encode them in with the @see attributes.
+ /** Assignment operator.
+ *
+ *
+ * @param val The value to assign to this object.
+ * @exception LibaryException The explanation for the exception.
+ * @return A reference to this object.
+ */
+ XX& operator=(XX& val);
+ 
+ 
+ // warning, add \n
+ Formatting Methods with Multiple Arguments
+We should try and make methods have as few parameters as possible. If you find yourself passing the
+same variables to every method then that variable should probably be part of the class. When a method
+does have a lot of parameters format it like this:
+ int AnyMethod(
+ int arg1,
+ int arg2,
+ int arg3,
+ int arg4);
+
+
+
+// maybe warning
+Short Methods
+• Methods should limit themselves to a single page of code. 
+
+// warning, add comments
+In a Source file Indicate if a Method is Static or Virtual
+In a source file you can't tell a method is static or virtual because this information is in the header file.
+Knowing this information in a source file is useful and can be communicated using comments:
+/*virtual*/ void
+Class::method()
+{
+}
+/*static*/ void
+Class::method()
+{
+}
+
+// only one strategy
+Brace Placement
+Of the three major brace placement strategies two are acceptable, with the first one listed being
+preferable:
+• Place brace under and inline with keywords:
+ if (condition) while (condition)
+ { 				{
+ ... ...
+ }		 		}
+• Traditional Unix policy of placing the initial brace on the same line as the keyword and the
+trailing brace inline on its own line with the keyword:
+ if (condition) { while (condition) {
+ ... ...
+ } 				  }
+ 
+ 
+ // add  it
+ Always Uses Braces Form
+All if, while and do statements require braces even if there is only a single statement within the braces.
+For example:
+if (1 == somevalue)
+{
+ somevalue = 2;
+}
+Justification
+It ensures that when someone adds a line of code later there are already braces and they don't forget. It
+provides a more consistent look. This doesn't affect execution speed. It's easy to do.
+One Line Form
+if (1 == somevalue) somevalue = 2;
+
+
+// add it
+Indent using 3, 4, or 8 spaces for each level.
+• Do not use tabs, use spaces. Most editors can substitute spaces for tabs.
+• Tabs should be fixed at 8 spaces. Don't set tabs to a different spacing, uses spaces instead.
+• Indent as much as needed, but no more. There are no arbitrary rules as to the maximum
+indenting level. If the indenting level is more than 4 or 5 levels you may think about factoring
+out code. 
+
+// add
+Parens () with Key Words and Functions Policy (if, for, while)
+• Do not put parens next to keywords. Put a space between.
+• Do put parens next to function names.
+• Do not use parens in return statements when it's not necessary. 
+
+// maybe warning
+A Line Should Not Exceed 78 Characters
+
+
+// add parens
+?:
+The trouble is people usually try and stuff too much code in between the ? and :. Here are a couple of
+clarity rules to follow:
+• Put the condition in parens so as to set it off from other code
+
+// after ; set \n
+One Statement Per Line
+There should be only one statement per line unless the statements are very closely related.
+The reasons are:
+1. The code is easier to read. Use some white space too. Nothing better than to read code that is
+one line after another with no white space or comments.
+One Variable Per Line
+Related to this is always define one variable per line
+
+// add tabulation
+Alignment of Declaration Blocks
+• Block of declarations should be aligned.
+Justification
+• Clarity.
+• Similarly blocks of initialization of variables should be tabulated.
+• The ‘&’ and ‘*’ tokens should be adjacent to the type, not the name. 
+
+ 
+ // add warning
+ Don't place using namespace directive at global scope in a header file. This can cause lots of magic
+invisible conflicts that are hard to track. Keep using statements to implementation files. 
+
+// add warning (or like, you can check this if)
+• Accidental omission of the second ``='' of the logical compare is a problem. The following is
+confusing and prone to error.
+ if (abool= bbool) { ... }
+
+
+
+// probably, skip this
+// add parens ? if possible
+MACROS
+
+Always Wrap the Expression in Parenthesis
+When putting expressions in macros always wrap the expression in parenthesis to avoid potential
+communitive operation ambiguity. 
+Example
+#define ADD(x,y) x + y
+
+must be written as 
+
+#define ADD(x,y) ((x) + (y))
+
+ 
+ 
+ 
+ // add warning
+ No global variables in Header Files
+Do not put data definitions in header files. for example:
+/*
+ * aheader.h
+ */
+int x = 0;
