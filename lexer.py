@@ -17,6 +17,7 @@ class Token:
         self.type_ = TokenType.not_set # type: TokenType
         self.offset_ = None # type: int
         self.size_ = None # type: int
+        self.line_ = None # type: int
 
 
 
@@ -24,6 +25,7 @@ class Lexer:
     def __init__(self, text: str):
         self.str_ = text
         self.tokens_ = [] # List[Token]
+        self.cur_line = 1
         self.keywords_ = \
             [
             'alignas',    'decltype',     'namespace',        'struct',
@@ -159,13 +161,18 @@ class Lexer:
                 if self.str_[end] == '*' and self.str_[end + 1] == '/':
                     end += 2
                     break
+                elif self.str_[end] == '\n':
+                    self.cur_line += 1
                 end += 1
         elif self.str_[end] == '/' and self.str_[end + 1] == '/':
             while True:
                     if self.str_[end] == '\0' or self.str_[end] == '\n':
                         end += 1
+                        self.cur_line += 1
                         break
                     end += 1
+
+
 
         result.size_ = end - offset
         return result
@@ -214,10 +221,12 @@ class Lexer:
 
         while True:
             # first if should be checked and rethink another time
-            if self.str_[end] == '\\' and self.str_[end] == '\n':
-                end += 1  # another +1 will be done at the end of the cycle
+            if self.str_[end] == '\\' and self.str_[end + 1] == '\n':
+                self.cur_line += 1
+                end += 2  # another +1 will be done at the end of the cycle
             elif self.str_[end] == '\0' or self.str_[end] == '\n':
                 end += 1
+                self.cur_line += 1
                 break
             end += 1
 
@@ -234,6 +243,7 @@ class Lexer:
 
             if self.str_[i] == '.':
                 t = Token()
+                t.line_ = self.cur_line
                 if self.str_[i + 1] >= '0' and self.str_[i + 1] <= '9':
                     t = self.parse_number(i)
                 else:
@@ -243,31 +253,37 @@ class Lexer:
                 continue
             elif self.str_[i] >= '0' and self.str_[i] <= '9':
                 t = self.parse_number(i)
+                t.line_ = self.cur_line
                 i += t.size_
                 self.tokens_.append(t)
                 continue
             elif self.str_[i] == '"':
                 t = self.parse_string(i)
+                t.line_ = self.cur_line
                 i += t.size_
                 self.tokens_.append(t)
                 continue
             elif self.str_[i] == '\'':
                 t = self.parse_char(i)
+                t.line_ = self.cur_line
                 i += t.size_
                 self.tokens_.append(t)
                 continue
             elif self.str_[i] == '#':
                 t = self.parse_sharp(i)
+                t.line_ = self.cur_line
                 i += t.size_
                 self.tokens_.append(t)
                 continue
             elif self.str_[i] == '_' or self.str_[i] == '$' or (self.str_[i] >= 'a' and self.str_[i] <= 'z') or (self.str_[i] >= 'A' and self.str_[i] <= 'Z'):
                 t = self.parse_id(i)
+                t.line_ = self.cur_line
                 i += t.size_
                 self.tokens_.append(t)
                 continue
             elif (self.str_[i] == '/' and self.str_[i + 1] == '/') or (self.str_[i] == '/' and self.str_[i + 1] == '*') :
                 t = self.parse_comment(i)
+                t.line_ = self.cur_line
                 i += t.size_
                 self.tokens_.append(t)
                 continue
@@ -275,15 +291,18 @@ class Lexer:
                     self.str_[i] == '=' or self.str_[i] == '!' or self.str_[i] == '>' or self.str_[i] == '<' or self.str_[i] == '&' or
                     self.str_[i] == '|' or self.str_[i] == '^' or self.str_[i] == '~' or self.str_[i] == '?' or self.str_[i] == ':' ) :
                 t = self.parse_operation(i)
+                t.line_ = self.cur_line
                 i += t.size_
                 self.tokens_.append(t)
                 continue
             elif self.is_delimiter(self.str_[i]):
                 t = Token()
+                t.line_ = self.cur_line
                 t.offset_ = i
                 t.size_ = 1
                 if self.str_[i] == self.line_:
                     t.type_ = TokenType.line
+                    self.cur_line += 1
                 else:
                     t.type_ = TokenType.delim
                 self.tokens_.append(t)
@@ -291,9 +310,21 @@ class Lexer:
                 continue
             elif self.str_[i] == '(' or self.str_[i] == ')' or self.str_[i] == '[' or self.str_[i] == ']' or self.str_[i] == '{' or self.str_[i] == '}':
                 t = Token()
+                t.line_ = self.cur_line
                 t.offset_ = i
                 t.size_ = 1
                 t.type_ = TokenType.bracket
                 self.tokens_.append(t)
                 i += t.size_
                 continue
+            elif self.str_[i] == '\\':
+                t = Token()
+                t.line_ = self.cur_line
+                t.offset_ = i
+                t.size_ = 1
+                t.type_ = TokenType.delim
+                self.tokens_.append(t)
+                i += t.size_
+                continue
+            else:
+                raise Exception('Unknown token')
