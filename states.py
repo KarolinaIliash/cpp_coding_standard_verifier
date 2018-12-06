@@ -892,7 +892,7 @@ class Macros(State):
         self.line = cur_lexer.tokens_[cur_token].line_
         text = get_token_text(cur_lexer.tokens_[cur_token])
 
-        text_without_define = text[len("define"):]
+        text_without_define = text[len("#define"):]
         text_without_spaces = miss_spaces(text_without_define)
 
         name = ''
