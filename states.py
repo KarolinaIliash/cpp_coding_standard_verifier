@@ -1,7 +1,6 @@
 
 from lexer import Lexer, Token, TokenType
 
-
 cur_line = 0
 cur_token = 0
 cur_lexer = None  # type: Lexer
@@ -355,6 +354,9 @@ def read_type() -> str:
             if get_token_text(cur_lexer.tokens_[cur_token]) == ')':
                 cur_token -= 1
                 break
+            if get_token_text(cur_lexer.tokens_[cur_token]) == '=':
+                cur_token -= 1
+                break
 
             if get_token_text(cur_lexer.tokens_[cur_token]) == ':':
                 ret += '::'
@@ -641,10 +643,60 @@ class Block(StateInBrackets):
         cur_token += 1
 
         while not brackets_count == 0:
-            if get_token_text(cur_lexer.tokens_[cur_token]) == '{':
+            t = cur_lexer.tokens_[cur_token]
+            text = get_token_text(t)
+            if text == '{':
                 brackets_count += 1
-            elif get_token_text(cur_lexer.tokens_[cur_token]) == '}':
+            elif text == '}':
                 brackets_count -= 1
+            elif text in cur_lexer.keywords_types_:
+                var = Variable()
+                var.parse_me()
+                self.content.append(var)
+            elif t.type_ == TokenType.id:
+                token = cur_token
+                read_type()
+                if  get_token_text(cur_lexer.tokens_[cur_token - 1]) == ' ' or get_token_text(cur_lexer.tokens_[cur_token - 1]) == '\n':
+                    cur_token = token
+                    var = Variable()
+                    var.parse_me()
+                    self.content.append(var)
+            elif t.type_ == TokenType.keyword:
+                if text == 'if':
+                    cur_token += 1
+                    t = cur_lexer.tokens_[cur_token]
+                    text = get_token_text(t)
+                    if not text == " ":
+                        print('TODO warning for no space after if')
+                    while not get_token_text(cur_lexer.tokens_[cur_token]) == '(':
+                        cur_token += 1
+                    if_brackets_count = 1
+                    cur_token += 1
+                    while not if_brackets_count == 0:
+                        t_if = cur_lexer.tokens_[cur_token]
+                        text_if = get_token_text(t_if)
+                        if text_if == '(':
+                            if_brackets_count += 1
+                        elif text_if == ')':
+                            if_brackets_count -= 1
+                        elif text_if == '=':
+                            print('TODO warning for = in if condition')
+                        cur_token += 1
+
+                    while cur_lexer.tokens_[cur_token].type_ == TokenType.delim or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.comment or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.line:
+                        cur_token += 1
+                    t = cur_lexer.tokens_[cur_token]
+                    text = get_token_text(t)
+                    if not text == '{':
+                        print('TODO warning for if without brackets')
+                        continue
+                    else:
+                        bl = Block()
+                        bl.parse_me()
+                        self.content.append(bl)
+
 
             cur_token += 1
 

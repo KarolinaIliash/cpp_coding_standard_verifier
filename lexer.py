@@ -78,6 +78,19 @@ class Lexer:
              '|=', '^', '^=', '~', '.', '?', ':'
              ]
 
+        self.keywords_types_ = \
+            [
+                'double',
+                'auto',
+                'bool',
+                'char', 'float',
+                'char16_t',
+                'char32_t',
+                'void',
+                'int',
+                'long'
+            ]
+
     def next_delimiter(self, offset: int) -> int:
         cur = self.str_[offset:]
         i = 0
