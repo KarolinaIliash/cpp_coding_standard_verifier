@@ -22,8 +22,6 @@ id_keywords_in_class = \
 def get_token_text(token : Token) -> str:
     return cur_lexer.str_[token.offset_:token.offset_ + token.size_]
 
-
-# TODO add lines in state parse_me functions
 class State:
     def __init__(self):
 
@@ -87,6 +85,7 @@ class Namespace(StateInBrackets):
             return
         self.line = cur_lexer.tokens_[cur_token].line_
         if not self.is_file:
+            self.line = 0
             while True:
                 cur_token += 1
                 t = cur_lexer.tokens_[cur_token]  # type: Token
@@ -134,6 +133,9 @@ class Namespace(StateInBrackets):
 
             elif t.type_ == TokenType.sharp:
                 new = get_right_preprocessor_directive()  # Sharp()
+
+            elif t.type_ == TokenType.comment:
+                new = Comment()
 
             if new is not None:
                 self.content.append(new)
@@ -192,9 +194,9 @@ def eat_template():
 
 from enum import Enum
 class Scope(Enum):
-    private = 0,
+    public = 0,
     protected = 1,
-    public = 2
+    private = 2
 
 
 # todo check it, i was writing it too late
@@ -205,6 +207,7 @@ class Class(StateInBrackets):
     def __init__(self):
         super().__init__()
         self.name = None
+        self.is_decl = False
 
     def parse_me(self):
         global cur_line
@@ -221,6 +224,7 @@ class Class(StateInBrackets):
             if get_token_text(t) == '{':
                 break
             if get_token_text(t) == ';':
+                self.is_decl = True
                 return
 
         while True:
@@ -255,6 +259,10 @@ class Class(StateInBrackets):
                     new.ftype = 'virtual'
                 elif kw == 'template':
                     eat_template()
+                elif kw == 'typedef':
+                    new = Typedef()
+                elif kw == 'using':
+                    new = Using()
                 elif kw in id_keywords_in_file:
                     new = identifier()
 
@@ -266,6 +274,8 @@ class Class(StateInBrackets):
                 # function should understand if it's destructor
                 new = Function()
 
+            elif t.type_ == TokenType.comment:
+                new = Comment()
 
             if not new is None:
                 new.scope = cur_scope
@@ -277,6 +287,15 @@ class Class(StateInBrackets):
 class Friend(State):
     def __init__(self):
         super().__init__()
+
+    def parse_me(self):
+        global cur_line
+        global cur_token
+        global cur_lexer
+
+        self.line = cur_lexer.tokens_[cur_token].line_
+        while not get_token_text(cur_lexer.tokens_[cur_token]) == ';':
+            cur_token += 1
 
 
 class Struct(Class):
@@ -331,6 +350,8 @@ def read_type() -> str:
 
     while not (t.type_ == TokenType.keyword
                or t.type_ == TokenType.id) or get_token_text(t) == 'const' or get_token_text(t) == 'constexpt' or get_token_text(t) == 'typename':
+        if get_token_text(t) == 'const' or get_token_text(t) == 'constexpt':
+            ret += ' const '
         cur_token += 1
         t = cur_lexer.tokens_[cur_token]
 
@@ -359,6 +380,9 @@ def read_type() -> str:
                 break
 
             if get_token_text(cur_lexer.tokens_[cur_token]) == ':':
+                if not get_token_text(cur_lexer.tokens_[cur_token + 1]) == ':':
+                    cur_token += 1
+                    return '_label_'
                 ret += '::'
                 cur_token += 2
 
@@ -378,6 +402,10 @@ def read_type() -> str:
                     or get_token_text(cur_lexer.tokens_[cur_token]) == '*' \
                     or get_token_text(cur_lexer.tokens_[cur_token]) == '&':
                 #cur_token -= 1
+                break
+
+            if cur_lexer.tokens_[cur_token].type_ == TokenType.operation:
+                return None
                 break
 
             cur_token += 1
@@ -424,7 +452,6 @@ class Enum(StateInBrackets):
                 break
         cur_token = close_bracket_t_n + 1
 
-# TODO add check of name according to coding standard
 class EnumLabel(State):
     def __init__(self):
         super().__init__()
@@ -574,13 +601,16 @@ class Argument(StateInBrackets):
         self.type = ''
         self.mod = ''
         self.name = ''
+        # self.type_start_line = 0
 
     def parse_me(self):
         global cur_line
         global cur_token
         global cur_lexer
-        self.line = cur_lexer.tokens_[cur_token].line_
+        #self.type_start_line = cur_lexer.tokens_[cur_token].line_
         self.type = read_type()
+        self.line = cur_lexer.tokens_[cur_token].line_
+
         '''
         while True:
             t = cur_lexer.tokens_[cur_token]
@@ -645,6 +675,9 @@ class Block(StateInBrackets):
         while not brackets_count == 0:
             t = cur_lexer.tokens_[cur_token]
             text = get_token_text(t)
+            if t.type_ == TokenType.delim or text == '\n' or t.type_ == TokenType.comment:
+                cur_token += 1
+                continue
             if text == '{':
                 brackets_count += 1
             elif text == '}':
@@ -655,19 +688,64 @@ class Block(StateInBrackets):
                 self.content.append(var)
             elif t.type_ == TokenType.id:
                 token = cur_token
-                read_type()
-                if  get_token_text(cur_lexer.tokens_[cur_token - 1]) == ' ' or get_token_text(cur_lexer.tokens_[cur_token - 1]) == '\n':
+                line = cur_lexer.tokens_[cur_token].line_
+                ret = read_type()
+                if ((cur_lexer.tokens_[cur_token - 1].type_ == TokenType.delim or get_token_text(cur_lexer.tokens_[cur_token - 1]) == '\n') \
+                        and cur_lexer.tokens_[cur_token].type_ == TokenType.id) and not ret is None:
                     cur_token = token
                     var = Variable()
                     var.parse_me()
                     self.content.append(var)
+                elif ret == '_label_':
+                    continue
+                else:
+                    cur_token = token
+                    while not get_token_text(cur_lexer.tokens_[cur_token]) == ';':
+                        cur_token += 1
+            elif t.type_ == TokenType.operation:
+                while not get_token_text(cur_lexer.tokens_[cur_token]) == ';':
+                    cur_token += 1
+
             elif t.type_ == TokenType.keyword:
-                if text == 'if':
+                if text == 'struct':
+                    var = Struct()
+                    var.parse_me()
+                    self.content.append(var)
+                    continue
+                if text == 'class':
+                    var = Class()
+                    var.parse_me()
+                    self.content.append(var)
+                    continue
+
+
+                if text == 'try':
+                    cur_token += 1
+                    continue
+                if text == 'catch':
+                    while not get_token_text(cur_lexer.tokens_[cur_token]) == '(':
+                        cur_token += 1
+                    if_brackets_count = 1
+                    cur_token += 1
+                    while not if_brackets_count == 0:
+                        t_if = cur_lexer.tokens_[cur_token]
+                        text_if = get_token_text(t_if)
+                        if text_if == '(':
+                            if_brackets_count += 1
+                        elif text_if == ')':
+                            if_brackets_count -= 1
+                        cur_token += 1
+                elif text == 'if' or text == 'while':
+                    t = cur_lexer.tokens_[cur_token]
+                    text = get_token_text(t)
+                    if_token = If()
+                    if_token.line = t.line_
+                    self.content.append(if_token)
                     cur_token += 1
                     t = cur_lexer.tokens_[cur_token]
                     text = get_token_text(t)
                     if not text == " ":
-                        print('TODO warning for no space after if')
+                        if_token.has_space = False
                     while not get_token_text(cur_lexer.tokens_[cur_token]) == '(':
                         cur_token += 1
                     if_brackets_count = 1
@@ -680,7 +758,7 @@ class Block(StateInBrackets):
                         elif text_if == ')':
                             if_brackets_count -= 1
                         elif text_if == '=':
-                            print('TODO warning for = in if condition')
+                            if_token.has_assign = True
                         cur_token += 1
 
                     while cur_lexer.tokens_[cur_token].type_ == TokenType.delim or \
@@ -690,15 +768,145 @@ class Block(StateInBrackets):
                     t = cur_lexer.tokens_[cur_token]
                     text = get_token_text(t)
                     if not text == '{':
-                        print('TODO warning for if without brackets')
+                        if_token.has_brackets = False
                         continue
                     else:
                         bl = Block()
                         bl.parse_me()
                         self.content.append(bl)
+                elif text == 'else':
+                    cur_token += 1
+                    else_token = Else()
+                    self.content.append(else_token)
+                    else_token.line = t.line_
+                    while cur_lexer.tokens_[cur_token].type_ == TokenType.delim or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.comment or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.line:
+                        cur_token += 1
+                    t = cur_lexer.tokens_[cur_token]
+                    text = get_token_text(t)
+                    if not text == '{':
+                        else_token.has_brackets = False
+                        continue
+                    else:
+                        bl = Block()
+                        bl.parse_me()
+                        self.content.append(bl)
+                elif text == 'for':
+                    for_token = For()
+                    for_token.line = t.line_
+                    self.content.append(for_token)
+                    cur_token += 1
+                    t = cur_lexer.tokens_[cur_token]
+                    text = get_token_text(t)
+                    if not text == " ":
+                        for_token.has_space = False
+                    while not get_token_text(cur_lexer.tokens_[cur_token]) == '(':
+                        cur_token += 1
+                    if_brackets_count = 1
+                    cur_token += 1
+                    while not if_brackets_count == 0:
+                        t_if = cur_lexer.tokens_[cur_token]
+                        text_if = get_token_text(t_if)
+                        if text_if == '(':
+                            if_brackets_count += 1
+                        elif text_if == ')':
+                            if_brackets_count -= 1
+                        cur_token += 1
 
+                    while cur_lexer.tokens_[cur_token].type_ == TokenType.delim or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.comment or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.line:
+                        cur_token += 1
+                    t = cur_lexer.tokens_[cur_token]
+                    text = get_token_text(t)
+                    if not text == '{':
+                        for_token.has_brackets = False
+                        continue
+                    else:
+                        bl = Block()
+                        bl.parse_me()
+                        self.content.append(bl)
+                elif text == 'return' or text == 'goto':
+                    while not get_token_text(cur_lexer.tokens_[cur_token]) == ';':
+                        cur_token += 1
+                elif text == 'case' or text == 'default':
+                    while not (get_token_text(cur_lexer.tokens_[cur_token]) == ':') \
+                            or get_token_text(cur_lexer.tokens_[cur_token - 1]) == ':' \
+                            or get_token_text(cur_lexer.tokens_[cur_token + 1]) == ':':
+                        cur_token += 1
+                elif text == 'switch':
+
+                    switch_token = Switch()
+                    self.content.append(switch_token)
+                    switch_token.line = t.line_
+                    cur_token += 1
+                    t = cur_lexer.tokens_[cur_token]
+                    text = get_token_text(t)
+                    if not text == " ":
+                        switch_token.has_space = False
+                    while not get_token_text(cur_lexer.tokens_[cur_token]) == '(':
+                        cur_token += 1
+                    if_brackets_count = 1
+                    cur_token += 1
+                    while not if_brackets_count == 0:
+                        t_if = cur_lexer.tokens_[cur_token]
+                        text_if = get_token_text(t_if)
+                        if text_if == '(':
+                            if_brackets_count += 1
+                        elif text_if == ')':
+                            if_brackets_count -= 1
+                        cur_token += 1
+                    while cur_lexer.tokens_[cur_token].type_ == TokenType.delim or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.comment or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.line:
+                        cur_token += 1
+                    bl = Block()
+                    bl.parse_me()
+                    self.content.append(bl)
+                elif text == 'do':
+                    cur_token += 1
+                    t = cur_lexer.tokens_[cur_token]
+                    text = get_token_text(t)
+                    do_token = Do()
+                    self.content.append(do_token)
+                    do_token.line = t.line_
+
+                    if not text == " ":
+                        do_token.has_space = False
+                    while cur_lexer.tokens_[cur_token].type_ == TokenType.delim or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.comment or \
+                            cur_lexer.tokens_[cur_token].type_ == TokenType.line:
+                        cur_token += 1
+
+                    bl = Block()
+                    bl.parse_me()
+                    self.content.append(bl)
+                    while not get_token_text(cur_lexer.tokens_[cur_token]) == 'while':
+                        cur_token += 1
+                    while not get_token_text(cur_lexer.tokens_[cur_token]) == '(':
+                        cur_token += 1
+                    if_brackets_count = 1
+                    cur_token += 1
+                    while not if_brackets_count == 0:
+                        t_if = cur_lexer.tokens_[cur_token]
+                        text_if = get_token_text(t_if)
+                        if text_if == '(':
+                            if_brackets_count += 1
+                        elif text_if == ')':
+                            if_brackets_count -= 1
+                        cur_token += 1
+                    while not get_token_text(cur_lexer.tokens_[cur_token]) == ';':
+                        cur_token += 1
+
+            #else:
+            #    while not get_token_text(cur_lexer.tokens_[cur_token]) == ';' \
+            #            and not get_token_text(cur_lexer.tokens_[cur_token]) == '}' :
+            #        cur_token += 1
 
             cur_token += 1
+
+        self.end_line = cur_lexer.tokens_[cur_token].line_
 
 
 class Function(StateInBrackets):
@@ -768,16 +976,16 @@ class Function(StateInBrackets):
                         t = cur_lexer.tokens_[cur_token]
 
                     t = cur_lexer.tokens_[cur_token]
-                    self.name = 'operator '
+                    self.name = 'operator'
                     if t.type_ == TokenType.operation:
                         t = cur_lexer.tokens_[cur_token]
                         cur_token += 1
-                        self.name += get_token_text(t)
+                        #self.name += get_token_text(t)
 
                     elif get_token_text(t) == '(':
                         cur_token += 2
                         t = cur_lexer.tokens_[cur_token]
-                        self.name += '()'
+                        #self.name += '()'
 
                     break
 
@@ -900,7 +1108,7 @@ class Variable(State):
         self.name = get_token_text(t)
         if get_token_text(cur_lexer.tokens_[cur_token + 1]) == ',':
             semicolon_t_n = self.next_semicolon(cur_token)
-            self.name = cur_lexer.str_[t.offset_:cur_lexer.tokens_[semicolon_t_n].offset_ - 1]
+            self.name = cur_lexer.str_[t.offset_:cur_lexer.tokens_[semicolon_t_n].offset_]
 
         semicolon_t_n = self.next_semicolon(cur_token)
 
@@ -1021,3 +1229,46 @@ class OtherPreprocessorDirective(State):
 
         #cur_token += 1
 
+class If(State):
+    def __init__(self):
+        super().__init__()
+        self.has_space = True
+        self.has_brackets = True
+        self.has_assign = False
+
+class For(State):
+    def __init__(self):
+        super().__init__()
+        self.has_space = True
+        self.has_brackets = True
+
+class Switch(State):
+    def __init__(self):
+        super().__init__()
+        self.has_space = True
+
+class Else(State):
+    def __init__(self):
+        super().__init__()
+        self.has_brackets = True
+
+class Do(State):
+    def __init__(self):
+        super().__init__()
+        self.has_space = True
+
+class Comment(State):
+    def __init__(self):
+        super().__init__()
+        self.block = False
+
+    def parse_me(self):
+        global cur_token
+        text = get_token_text(cur_lexer.tokens_[cur_token])
+        if text.startswith('/*'):
+            self.block = True
+            self.name = text[2:len(text) - 2]
+        else:
+            self.name = text[2:len(text)]
+        self.line = cur_lexer.tokens_[cur_token].line_
+        cur_token += 1

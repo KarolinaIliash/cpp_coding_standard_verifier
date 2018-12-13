@@ -1,0 +1,135 @@
+﻿Warnings:
+
+Class Names
+• Use upper case letters as word separators, lower case for the rest of a word
+• First character in a name is upper case
+• No underbars ('_')
+
+Method Names
+• Use the same rule as for class names. 
+
+Class Attribute Names
+• Attribute names should be prepended with the character 'm'.
+• After the 'm' use the same rules as for class names.
+• 'm' always precedes other name modifiers like 'p' for pointer. 
+
+Method Argument Names
+• The first character should be lower case.
+• All word beginnings after the first letter should be upper case as with class names. 
+
+Variable Names on the Stack
+• use all lower case letters
+• use '_' as the word separator. 
+
+Pointer Variables
+• pointers should be prepended by a 'p' in most cases
+• place the * close to the pointer type not the variable name 
+
+Reference Variables and Functions Returning References
+• References should be prepended with 'r'. 
+
+Global Variables
+• Global variables should be prepended with a 'g'. 
+
+Global Constants
+• Global constants should be all caps with '_' separators. 
+
+Static Variables
+• Static variables may be prepended with 's'. 
+
+Type Names
+• Typedef names should use the same naming policy as for a class with the word Type appended. 
+
+Enum Names
+Labels All Upper Case with '_' Word Separators
+This is the standard rule for enum labels. 
+
+C Function Names
+• For C functions use the GNU convention of all lower case letters with '_' as the word delimiter. 
+
+Don't put more than one class in a file
+
+Name your files after your classes. 
+
+• Put #defines and macros in all upper using '_' separators. 
+
+Ordering is: public, protected, private 
+
+Use Header File Guards
+Include files should protect against multiple inclusion through the use of macros that "guard" the files.
+#ifndef filename_h
+#define filename_h
+#endif
+
+Method Header
+Every parameter should be documented. Every return code should be documented. All exceptions
+should be documented. Use complete sentences when describing attributes. Make sure to think about
+what other resources developers may need and encode them in with the @see attributes.
+ /** Assignment operator.
+ *
+ *
+ * @param val The value to assign to this object.
+ * @exception LibaryException The explanation for the exception.
+ * @return A reference to this object.
+ */
+ XX& operator=(XX& val);
+
+ 
+  Formatting Methods with Multiple Arguments
+We should try and make methods have as few parameters as possible. If you find yourself passing the
+same variables to every method then that variable should probably be part of the class. When a method
+does have a lot of parameters format it like this:
+ int AnyMethod(
+ int arg1,
+ int arg2,
+ int arg3,
+ int arg4);
+
+Short Methods
+• Methods should limit themselves to a single page of code. 
+
+Brace Placement
+Of the three major brace placement strategies two are acceptable, with the first one listed being
+preferable:
+• Place brace under and inline with keywords:
+ if (condition) while (condition)
+ { 				{
+ ... ...
+ }		 		}
+
+ 
+ Indent using 4 spaces for each level.
+• Do not use tabs, use spaces. Most editors can substitute spaces for tabs.
+• Tabs should be fixed at 8 spaces. Don't set tabs to a different spacing, uses spaces instead.
+• Indent as much as needed, but no more. There are no arbitrary rules as to the maximum
+indenting level. If the indenting level is more than 4 or 5 levels you may think about factoring
+out code. 
+
+Parens () with Key Words and Functions Policy (if, for, while)
+• Do not put parens next to keywords. Put a space between.
+
+A Line Should Not Exceed 78 Characters
+
+One Statement Per Line
+There should be only one statement per line unless the statements are very closely related.
+The reasons are:
+1. The code is easier to read. Use some white space too. Nothing better than to read code that is
+one line after another with no white space or comments.
+One Variable Per Line
+Related to this is always define one variable per line
+
+Alignment of Declaration Blocks
+• Block of declarations should be aligned.
+Justification
+• Similarly blocks of initialization of variables should be tabulated.
+
+ Don't place using namespace directive at global scope in a header file. This can cause lots of magic
+invisible conflicts that are hard to track. Keep using statements to implementation files. 
+
+• Accidental omission of the second ``='' of the logical compare is a problem. The following is
+confusing and prone to error.
+ if (abool= bbool) { ... }
+
+Fixings:
+
+Single and automatic for aligning tabulation.

@@ -11,6 +11,7 @@ class TokenType(Enum):
     bracket = 8
     sharp = 9
     line = 10
+    end = 11
 
 class Token:
     def __init__(self):
@@ -25,7 +26,7 @@ class Lexer:
     def __init__(self, text: str):
         self.str_ = text
         self.tokens_ = [] # List[Token]
-        self.cur_line = 1
+        self.cur_line = 0
         self.keywords_ = \
             [
             'alignas',    'decltype',     'namespace',        'struct',
@@ -180,8 +181,8 @@ class Lexer:
         elif self.str_[end] == '/' and self.str_[end + 1] == '/':
             while True:
                     if self.str_[end] == '\0' or self.str_[end] == '\n':
-                        end += 1
-                        self.cur_line += 1
+                        #end += 1
+                        #self.cur_line += 1
                         break
                     end += 1
 
@@ -234,12 +235,16 @@ class Lexer:
 
         while True:
             # first if should be checked and rethink another time
+            if self.str_[end] == '\0':
+                break
             if self.str_[end] == '\\' and self.str_[end + 1] == '\n':
                 self.cur_line += 1
                 end += 2  # another +1 will be done at the end of the cycle
-            elif self.str_[end] == '\0' or self.str_[end] == '\n':
+            elif self.str_[end] == '\n':
                 end += 1
                 self.cur_line += 1
+                break
+            if self.str_[end] == '\0':
                 break
             end += 1
 
@@ -341,3 +346,10 @@ class Lexer:
                 continue
             else:
                 raise Exception('Unknown token')
+
+        t = Token()
+        t.line_ = self.cur_line
+        t.offset_ = i
+        t.size_ = 1
+        t.type_ = TokenType.end
+        self.tokens_.append(t)
