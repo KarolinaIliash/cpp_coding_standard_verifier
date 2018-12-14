@@ -7,6 +7,9 @@ from typing import List
 
 def get_files(root: str, cur_dir: str) -> List[str]:
     out = [] # type: List[str]
+    if isfile(cur_dir):
+        out.append(cur_dir)
+        return out
     l = listdir(cur_dir)
     for f in l:
         if isfile(join(cur_dir, f)) and (f.endswith('.hpp')
@@ -20,7 +23,7 @@ def get_files(root: str, cur_dir: str) -> List[str]:
 
 files_list = get_files(path_dir, path_dir)
 
-import file
+import files
 
 import sys
 import os
@@ -42,8 +45,15 @@ start_time = time.time()
 #for f in files_list:
 #   fl = file.CppFile(path_dir + f)
 #   fl.scan()
-f1 = file.CppFile(r"D:\Downloads\QuantLib-master\ql\cashflow.hpp")
+f1 = files.CppFile(r"D:\Downloads\QuantLib-master\ql\cashflow.hpp")
 f1.scan()
+
+f2 = files.CppFile(r"D:\Downloads\QuantLib-master\ql\cashflow.cpp")
+f2.scan()
+
+f1.verify()
+f2.verify()
+
 
 
 print("--- %s seconds ---" % (time.time() - start_time))

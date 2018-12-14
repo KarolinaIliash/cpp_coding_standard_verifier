@@ -2,6 +2,8 @@ import states
 import enum
 import lexer
 
+import files
+
 class WarningType(enum.Enum):
     none = 0
     guard = 1
@@ -14,6 +16,7 @@ class WarningType(enum.Enum):
     name_file_after_class = 8
     doc_above_method = 9
     brackets_tabs = 10
+    impl_comment = 11
 
 file_endings = [".cpp", ".hpp", ".c", ".h"]
 
@@ -25,10 +28,16 @@ class Warning:
 
 
 class Verifier:
+    #def __init__(self):
+    #    self.warnings = []
+
     def __init__(self, file_namespace: states.Namespace, lexer: lexer.Lexer):
         self.nm = file_namespace
         self.warnings = []
         self.lexer = lexer
+
+    def get_token_text(self, token: lexer.Token):
+        return self.lexer.str_[token.offset_:token.offset_ + token.size_]
 
     def verify(self):
         self.verify_file(self.nm)
@@ -45,8 +54,7 @@ class Verifier:
                     war.text = 'Header file should starts with include guard'
                     self.warnings.append(war)
                     break
-        #print('TODO make one file - one class') check it
-        #self.verify_one_class_in_hpp(obj)
+
         self.verify_one_class_in_file(obj)
         self.verify_namespace(obj)
         self.verify_tabulation()
@@ -103,10 +111,10 @@ class Verifier:
                 if tokens[cur_token].type_ == lexer.TokenType.end:
                     return
 
-                if states.get_token_text(tokens[cur_token]) == '\r' \
-                        or states.get_token_text(tokens[cur_token]) == '\n':
+                if self.get_token_text(tokens[cur_token]) == '\r' \
+                        or self.get_token_text(tokens[cur_token]) == '\n':
                     cur_token += 1
-                    if states.get_token_text(tokens[cur_token]) == '\n':
+                    if self.get_token_text(tokens[cur_token]) == '\n':
                         cur_token += 1
                     new_line = True
                     break
@@ -114,18 +122,18 @@ class Verifier:
                 if tokens[cur_token].type_ == lexer.TokenType.end:
                     return
 
-                if states.get_token_text(tokens[cur_token]) == '}':
+                if self.get_token_text(tokens[cur_token]) == '}':
                     #current_tab -= tab_size
                     if not i == current_tab - tab_size:
                         war = Warning()
                         war.type = WarningType.tabs
                         war.line = tokens[cur_token].line_
                         war.text = 'Wrong amount of spaces'
-                        war.current_tab = current_tab
+                        war.current_tab = current_tab - tab_size
                         self.warnings.append(war)
                     break
 
-                if not states.get_token_text(tokens[cur_token]) == ' ':
+                if not self.get_token_text(tokens[cur_token]) == ' ':
                     war = Warning()
                     war.type = WarningType.tabs
                     war.line = tokens[cur_token].line_
@@ -138,27 +146,35 @@ class Verifier:
 
                 cur_token += 1
             else:
-                if not current_tab == 0 and states.get_token_text(tokens[cur_token]) == ' ':
+                #if not current_tab == 0 and self.get_token_text(tokens[cur_token]) == ' ':
+                if self.get_token_text(tokens[cur_token]) == ' ':
                     war = Warning()
                     war.type = WarningType.tabs
                     war.line = tokens[cur_token].line_
                     war.text = 'Wrong amount of spaces'
                     war.current_tab = current_tab
                     self.warnings.append(war)
+
+                    token = cur_token
+                    while self.get_token_text(tokens[token]) == ' ':
+                        token += 1
+
+                    if self.get_token_text(tokens[token]) == '}':
+                        war.current_tab = current_tab - tab_size
+
                     cur_token += 1
 
             if not new_line:
-                if states.get_token_text(tokens[cur_token]) == '{' or states.get_token_text(tokens[cur_token]) == '}':
+                if self.get_token_text(tokens[cur_token]) == '{' or self.get_token_text(tokens[cur_token]) == '}':
 
-                    if states.get_token_text(tokens[cur_token]) == '{':
-                        current_tab += tab_size
-                    elif states.get_token_text(tokens[cur_token]) == '}':
+
+                    if self.get_token_text(tokens[cur_token]) == '}':
                         current_tab -= tab_size
 
-                    if not (states.get_token_text(tokens[cur_token + 1]) == '\r'
-                            or states.get_token_text(tokens[cur_token + 1]) == '\n'):
+                    if not (self.get_token_text(tokens[cur_token + 1]) == '\r'
+                            or self.get_token_text(tokens[cur_token + 1]) == '\n'):
 
-                        if not states.get_token_text(tokens[cur_token + 1]) == ';':
+                        if not self.get_token_text(tokens[cur_token + 1]) == ';':
                             war = Warning()
                             war.type = WarningType.brackets_tabs
                             war.line = tokens[cur_token].line_
@@ -166,14 +182,15 @@ class Verifier:
                             war.current_tab = current_tab
                             self.warnings.append(war)
 
+                    if self.get_token_text(tokens[cur_token]) == '{':
+                        current_tab += tab_size
 
-                while not (states.get_token_text(tokens[cur_token]) == '\r'
-                    or states.get_token_text(tokens[cur_token]) == '\n'
+                while not (self.get_token_text(tokens[cur_token]) == '\r'
+                    or self.get_token_text(tokens[cur_token]) == '\n'
                     or tokens[cur_token].type_ == lexer.TokenType.end):
 
                     cur_token += 1
-                    if states.get_token_text(tokens[cur_token]) == '{':
-                        current_tab += tab_size
+                    if self.get_token_text(tokens[cur_token]) == '{':
 
                         war = Warning()
                         war.type = WarningType.brackets_tabs
@@ -181,10 +198,13 @@ class Verifier:
                         war.text = 'There should be new line before and after bracket'
                         war.current_tab = current_tab
                         self.warnings.append(war)
-                    elif states.get_token_text(tokens[cur_token]) == '}':
+
+                        current_tab += tab_size
+
+                    elif self.get_token_text(tokens[cur_token]) == '}':
                         current_tab -= tab_size
 
-                        if not states.get_token_text(tokens[cur_token + 1]) == ';':
+                        if not self.get_token_text(tokens[cur_token + 1]) == ';':
                             war = Warning()
                             war.type = WarningType.brackets_tabs
                             war.line = tokens[cur_token].line_
@@ -192,9 +212,9 @@ class Verifier:
                             war.current_tab = current_tab
                             self.warnings.append(war)
                 else:
-                    if states.get_token_text(tokens[cur_token]) == '\r':
+                    if self.get_token_text(tokens[cur_token]) == '\r':
                         cur_token += 1
-                    if states.get_token_text(tokens[cur_token]) == '\n':
+                    if self.get_token_text(tokens[cur_token]) == '\n':
                         cur_token += 1
 
                 if tokens[cur_token].type_ == lexer.TokenType.end:
@@ -220,7 +240,7 @@ class Verifier:
 
         for token in tokens:
 
-            if states.get_token_text(token) == '\t':
+            if self.get_token_text(token) == '\t':
                 war = Warning()
                 war.type = WarningType.formatting
                 war.line = token.line_
@@ -234,18 +254,18 @@ class Verifier:
 
         while True:
 
-            if states.get_token_text(tokens[cur_token]) == ';':
-                next_text = states.get_token_text(tokens[cur_token + 1])
+            if self.get_token_text(tokens[cur_token]) == ';':
+                next_text = self.get_token_text(tokens[cur_token + 1])
                 if next_text == '\r' or next_text == '\n':
                     cur_token += 2
                     continue
 
-                while not (states.get_token_text(tokens[cur_token]) == '\n'
+                while not (self.get_token_text(tokens[cur_token]) == '\n'
                         or tokens[cur_token].type_ == lexer.TokenType.end):
                     cur_token += 1
 
                     t = tokens[cur_token]
-                    text = states.get_token_text(t)
+                    text = self.get_token_text(t)
 
                     if not (t.type_ == lexer.TokenType.comment or text == ' '):
                         war = Warning()
@@ -254,7 +274,7 @@ class Verifier:
                         war.text = 'There should be only one statement per line'
                         self.warnings.append(war)
 
-                    while not (states.get_token_text(tokens[cur_token]) == '\n'
+                    while not (self.get_token_text(tokens[cur_token]) == '\n'
                                or tokens[cur_token].type_ == lexer.TokenType.end):
                         cur_token += 1
 
@@ -353,7 +373,7 @@ class Verifier:
             elif tp is states.Function:
                 self.verify_arg_amount(state)
                 self.verify_doc_above_method(state, previous_state)
-                self.verify_member_function(state)
+                self.verify_member_function(state, obj.name)
             elif tp is states.Variable:
                 self.verify_member_varible(state)
             elif tp is states.Comment:
@@ -511,7 +531,27 @@ class Verifier:
             else:
                 print('Unexpected token')
 
-    def verify_member_function(self, obj):
+    def look_for_function_impl_(self, fun_name: str, state: states.State):
+        if hasattr(state, 'content'):
+            prev_state = None
+            for obj in state.content:
+                if isinstance(obj, states.Function) and obj.name == fun_name:
+                    return obj.line, prev_state
+                else:
+                    ret = self.look_for_function_impl_(fun_name, obj)
+                    if ret is not None:
+                        return ret
+                prev_state = obj
+        return None
+
+    def look_for_function_impl(self, fun_name: str):
+        for nm in files.CppFile.file_states:
+            ret = self.look_for_function_impl_(fun_name, nm)
+            if ret is not None:
+                return nm.name, ret
+        return None
+
+    def verify_member_function(self, obj: states.Function, class_name: str):
         if not (obj.name == 'dtor' or obj.name == 'ctor'):
             if not obj.name == 'operator':
                 if '_' in obj.name:
@@ -529,6 +569,23 @@ class Verifier:
                     self.warnings.append(war)
 
         self.verify_function(obj)
+
+        if obj.fwd_decl and ('virtual' in obj.ftype or 'static' in obj.ftype):
+            ret = self.look_for_function_impl(class_name + "::" + obj.name)
+            if ret is not None:
+                if not (isinstance(ret[1][1], states.Comment) and ret[1][1].name == obj.ftype):
+                    war = Warning()
+                    war.type = WarningType.impl_comment
+                    war.line = ret[1][0]
+                    war.text = 'Method implementation should has /*' + obj.ftype + '*/ comment according to declaration '
+                    war.comment = '/*'+obj.ftype+'*/'
+
+                    if not ret[0] in files.CppFile.verifiers:
+                        files.CppFile.verifiers[ret[0]] = Verifier(None, None)
+
+                    files.CppFile.verifiers[ret[0]].warnings.append(war)
+
+
 
     def verify_global_function(self, obj):
         if not obj.name == obj.name.lower():
@@ -573,7 +630,7 @@ class Verifier:
                     war = Warning()
                     war.type = WarningType.naming
                     war.line = obj.line
-                    war.text = 'global constants should not has uppercase letters in name. Use \'_\' as words delimiter'
+                    war.text = 'Global constants should not has uppercase letters in name. Use \'_\' as words delimiter'
                     self.warnings.append(war)
             else:
                 if not var.startswith('g'):
