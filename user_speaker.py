@@ -12,9 +12,12 @@ class UserSpeaker:
         cpp_files = []
 
         for f in files_list:
-            fl = files.CppFile(path + f)
-            fl.scan()
-            cpp_files.append(fl)
+            try:
+                fl = files.CppFile(path + f)
+                fl.scan()
+                cpp_files.append(fl)
+            except:
+                print("Skipping file " + path + f)
         for fl in cpp_files:
             fl.verify()
 
