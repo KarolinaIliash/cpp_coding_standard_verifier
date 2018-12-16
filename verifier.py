@@ -5,7 +5,7 @@ import lexer
 import files
 
 class WarningType(enum.Enum):
-    none = 0
+    #none = 0
     guard = 1
     naming = 2
     access = 3
@@ -23,7 +23,7 @@ file_endings = [".cpp", ".hpp", ".c", ".h"]
 
 class Warning:
     def __init__(self):
-        self.type = WarningType.none
+        self.type = 0 # WarningType.none
         self.line = None #  type: int
         self.text = None #  type: str
 

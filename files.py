@@ -97,8 +97,13 @@ class CppFile:
 
         sum_ = sum(statistics.values())
 
+        statistics.pop('none', None)
+
         for type in verifier.WarningType:
-            statistics[type.name] /= sum_
+            if not sum_ == 0:
+                statistics[type.name] = ('%.2f' % (statistics[type.name] / sum_ * 100)) + '%'
+            else:
+                statistics[type.name] = 0
 
         return sum_, statistics
 

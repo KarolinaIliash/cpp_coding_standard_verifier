@@ -1,5 +1,6 @@
 import files_util
 import automatic_fixer
+import json
 
 class UserSpeaker:
     @staticmethod
@@ -22,13 +23,29 @@ class UserSpeaker:
         sum = statistics[0]
         percents = statistics[1]
 
-        print("we found ", sum, " warnings.")
-        print(percents)
+        print("We found ", sum, " warnings.")
+        print("Brackets and tabulation warnings will be right if you don't have tabs in code.")
 
-        mode = input("Choose how do you want to fix them:\n1.Automatic\n2.Interactive\n3.None\n")
+        print(json.JSONEncoder(indent=4, separators=(',', ': ')).encode(percents))
 
-        if mode == '1':
+        mode = input("Do you want to save warnings in json format into file? (y/n)\n")
 
+        if mode == 'y':
+            while True:
+                file = input("Input path to file\nPath: ")
+                try:
+                    f = open(file, 'w')
+                    from files import MyEncoder
+                    f.write(MyEncoder(indent=4, separators=(',', ': ')).encode(files.CppFile.verifiers))
+                    f.flush()
+                    f.close()
+                    break
+                except:
+                    print("Bad input")
+
+        mode = input("Do you want to start automatic fix? (y/n)\n")
+
+        if mode == 'y':
             for fl in cpp_files:
                 fixer = automatic_fixer.AutomaticFixer(files.CppFile.verifiers[fl.nm.name].warnings, fl.nm.name)
                 fixer.fix_tabs_to_spaces()
@@ -48,10 +65,5 @@ class UserSpeaker:
                 fixer.fix_impl_comments()
                 fixer.fix_brackets_tabs()
 
-
-
-        #print("we can fix next types:\n1.Tabulation\n2.Implementation comments\n3.Brackets")
-
-UserSpeaker.speak()
 
 
