@@ -129,7 +129,24 @@ invisible conflicts that are hard to track. Keep using statements to implementat
 • Accidental omission of the second ``='' of the logical compare is a problem. The following is
 confusing and prone to error.
  if (abool= bbool) { ... }
+ 
+• In a Source file Indicate if a Method is Static or Virtual
+In a source file you can't tell a method is static or virtual because this information is in the header file.
+Knowing this information in a source file is useful and can be communicated using comments:
+/*virtual*/ void
+Class::method()
+{
+}
+/*static*/ void
+Class::method()
+{
+}
 
 Fixings:
-
-Single and automatic for aligning tabulation.
+• Changing tabs to spaces
+• Aligning of tabulation
+• Adding virtual and static comments
+• All braces in preferable startegy:
+{
+	//block
+}
