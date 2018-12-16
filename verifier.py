@@ -17,6 +17,7 @@ class WarningType(enum.Enum):
     doc_above_method = 9
     brackets_tabs = 10
     impl_comment = 11
+    tabs_to_spaces = 12
 
 file_endings = [".cpp", ".hpp", ".c", ".h"]
 
@@ -226,6 +227,7 @@ class Verifier:
     def verify_line_length(self):
         file = open(self.nm.name, 'r')
         lines = file.readlines()
+        lines = [line for line in lines if not line == '']
         num = 1
         for line in lines:
             if len(line) > 78:
@@ -243,7 +245,7 @@ class Verifier:
 
             if self.get_token_text(token) == '\t':
                 war = Warning()
-                war.type = WarningType.formatting
+                war.type = WarningType.tabs_to_spaces
                 war.line = token.line_
                 war.text = 'Do not use tabs, use spaces'
                 self.warnings.append(war)

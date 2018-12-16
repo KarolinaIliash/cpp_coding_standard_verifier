@@ -66,3 +66,12 @@ class AutomaticFixer:
         f.flush()
         f.close()
 
+    def fix_tabs_to_spaces(self):
+        f = open(self.file, 'r')
+        lines = f.read()
+        f.close()
+        f = open(self.file, 'w')
+        f.write(lines.replace('\t', '    '))
+        f.flush()
+        f.close()
+

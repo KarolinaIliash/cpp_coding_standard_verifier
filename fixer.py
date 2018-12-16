@@ -94,20 +94,6 @@ class BracketsTabsFixer(Fixer):
             return self.fix_open_bracket(line, pos_bracket)
         else:
             return self.fix_close_bracket(line, pos_bracket)
-        #changed_line =  +
-        #return line[0:pos_bracket] + '\n', ' ' * self.warning.current_tab + line[pos_bracket:]
-        #return line[0:pos_bracket] + '\n', ' ' * self.warning.current_tab + line[pos_bracket:pos_bracket + 1] + '\n' + ' ' * (self.warning.current_tab + 4) + line[pos_bracket + 1:]
-        if not pos_bracket == self.warning.current_tab:
-            line = line[0:pos_bracket] + '\n' + ' ' * self.warning.current_tab + line[pos_bracket:]
-            pos_bracket += 1 + self.warning.current_tab
-
-        if len(line) > pos_bracket + 1 and not line[pos_bracket + 1] == '\n':
-            line = line[0:pos_bracket + 1] + '\n' + ' ' * (self.warning.current_tab + 4) + line[pos_bracket + 1:]
-
-        lines = line.split('\n')
-        for i in range(0, len(lines) - 1):  # split makes redundant empty string after last \n
-            lines[i] = lines[i] + '\n'
-        return lines
 
     def fix_open_bracket(self, line, pos_bracket):
         if not pos_bracket == self.warning.current_tab:
@@ -120,7 +106,7 @@ class BracketsTabsFixer(Fixer):
         lines = line.split('\n')
         for i in range(0, len(lines) - 1):  # split makes redundant empty string after last \n
             lines[i] = lines[i] + '\n'
-        return lines
+        return lines[:-1]
 
     def fix_close_bracket(self, line, pos_bracket):
         if not pos_bracket == self.warning.current_tab:
@@ -136,13 +122,11 @@ class BracketsTabsFixer(Fixer):
         lines = line.split('\n')
         for i in range(0, len(lines) - 1):  # split makes redundant empty string after last \n
             lines[i] = lines[i] + '\n'
-        return lines
+        return lines[:-1]
 
     def eat_spaces(self, str):
         for i in range(len(str)):
             if not str[i] == ' ':
                 break
         return str[i:]
-
-
 

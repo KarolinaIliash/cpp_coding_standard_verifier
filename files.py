@@ -58,7 +58,7 @@ class CppFile:
             CppFile.file_states.append(self.nm)
 
             f = open('out.txt', 'a')  # type: _io.TextIOWrapper
-            f.write(MyEncoder().encode(self.nm))
+            f.write(MyEncoder(indent=4, separators=(',', ': ')).encode(self.nm))
 
     def verify(self):
 
