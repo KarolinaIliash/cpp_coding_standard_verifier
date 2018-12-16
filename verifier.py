@@ -204,13 +204,14 @@ class Verifier:
                     elif self.get_token_text(tokens[cur_token]) == '}':
                         current_tab -= tab_size
 
-                        if not self.get_token_text(tokens[cur_token + 1]) == ';':
-                            war = Warning()
-                            war.type = WarningType.brackets_tabs
-                            war.line = tokens[cur_token].line_
-                            war.text = 'There should be new line before and after bracket'
-                            war.current_tab = current_tab
-                            self.warnings.append(war)
+                        #if not self.get_token_text(tokens[cur_token + 1]) == ';':
+                        war = Warning()
+                        war.type = WarningType.brackets_tabs
+                        war.line = tokens[cur_token].line_
+                        war.text = 'There should be new line before and after bracket'
+                        war.current_tab = current_tab
+                        self.warnings.append(war)
+
                 else:
                     if self.get_token_text(tokens[cur_token]) == '\r':
                         cur_token += 1

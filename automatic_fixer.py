@@ -34,7 +34,7 @@ class AutomaticFixer:
 
     def fix_impl_comments(self):
         warnings = self.warnings
-        impl_comments_warnings = [w for w in warnings if w.type == verifier.WarningType.impl_comment.name]
+        impl_comments_warnings = [w for w in warnings if w.type == verifier.WarningType.impl_comment]
         f = open(self.file, 'r')
         lines = f.readlines()
         f.close()
@@ -50,7 +50,7 @@ class AutomaticFixer:
 
     def fix_brackets_tabs(self):
         warnings = self.warnings
-        brackets_tabs_warnings = [w for w in warnings if w.type == verifier.WarningType.brackets_tabs.name]
+        brackets_tabs_warnings = [w for w in warnings if w.type == verifier.WarningType.brackets_tabs]
         f = open(self.file, 'r')
         lines = f.readlines()
         f.close()

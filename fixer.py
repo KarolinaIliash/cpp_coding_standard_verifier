@@ -90,6 +90,10 @@ class BracketsTabsFixer(Fixer):
 
     def fix_line(self, line):
         pos_bracket = self.find_last_bracket(line)
+        if line[pos_bracket] == '{':
+            return self.fix_open_bracket(line, pos_bracket)
+        else:
+            return self.fix_close_bracket(line, pos_bracket)
         #changed_line =  +
         #return line[0:pos_bracket] + '\n', ' ' * self.warning.current_tab + line[pos_bracket:]
         #return line[0:pos_bracket] + '\n', ' ' * self.warning.current_tab + line[pos_bracket:pos_bracket + 1] + '\n' + ' ' * (self.warning.current_tab + 4) + line[pos_bracket + 1:]
@@ -104,6 +108,41 @@ class BracketsTabsFixer(Fixer):
         for i in range(0, len(lines) - 1):  # split makes redundant empty string after last \n
             lines[i] = lines[i] + '\n'
         return lines
+
+    def fix_open_bracket(self, line, pos_bracket):
+        if not pos_bracket == self.warning.current_tab:
+            line = line[0:pos_bracket] + '\n' + ' ' * self.warning.current_tab + self.eat_spaces(line[pos_bracket:])
+            pos_bracket += 1 + self.warning.current_tab
+
+        if len(line) > pos_bracket + 1 and not line[pos_bracket + 1] == '\n':
+            line = line[0:pos_bracket + 1] + '\n' + ' ' * (self.warning.current_tab + 4) + self.eat_spaces(line[pos_bracket + 1:])
+
+        lines = line.split('\n')
+        for i in range(0, len(lines) - 1):  # split makes redundant empty string after last \n
+            lines[i] = lines[i] + '\n'
+        return lines
+
+    def fix_close_bracket(self, line, pos_bracket):
+        if not pos_bracket == self.warning.current_tab:
+            line = line[0:pos_bracket] + '\n' + ' ' * self.warning.current_tab + self.eat_spaces(line[pos_bracket:])
+            pos_bracket += 1 + self.warning.current_tab
+
+        if len(line) > pos_bracket + 1 and not line[pos_bracket + 1] == '\n' and not (line[pos_bracket + 1] == ';' and line[pos_bracket + 2] == '\n'):
+            pos = pos_bracket + 1
+            if line[pos_bracket + 1] == ';':
+                pos = pos_bracket + 2
+            line = line[0:pos] + '\n' + ' ' * self.warning.current_tab + self.eat_spaces(line[pos:])
+
+        lines = line.split('\n')
+        for i in range(0, len(lines) - 1):  # split makes redundant empty string after last \n
+            lines[i] = lines[i] + '\n'
+        return lines
+
+    def eat_spaces(self, str):
+        for i in range(len(str)):
+            if not str[i] == ' ':
+                break
+        return str[i:]
 
 
 
